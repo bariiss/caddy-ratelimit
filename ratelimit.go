@@ -49,7 +49,7 @@ type RateLimit struct {
 	limiters *sync.Map
 
 	// RestrictionDuration is the amount of time to restrict
-	RestrictionDuration caddy.Duration `json:"restriction_duration,omitempty"`
+	RestrictionDuration caddy.Duration `json:"xd,omitempty"`
 }
 
 func (rl *RateLimit) provision(ctx caddy.Context, name string) error {

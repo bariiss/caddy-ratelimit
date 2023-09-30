@@ -10,6 +10,7 @@ This module implements both internal and distributed HTTP rate limiting. Request
 
 - Multiple rate limit zones
 - Sliding window algorithm
+- Restriction duration (how long to block clients after hitting rate limit)
 - Scalable ring buffer implementation
 	- Buffer pooling
 	- Goroutines: 1 (to clean up old buffers)
@@ -47,7 +48,7 @@ The `rate_limit` HTTP handler module lets you define rate limit zones, which hav
 
 A zone also has a key, which is different from its name. Keys associate 1:1 with rate limiters, implemented as ring buffers; i.e. a new key implies allocating a new ring buffer. Keys can be static (no placeholders; same for every request), in which case only one rate limiter will be allocated for the whole zone. Or, keys can contain placeholders which can be different for every request, in which case a zone may contain numerous rate limiters depending on the result of expanding the key.
 
-A zone is synomymous with a rate limit, being a number of events per duration. Both `window` and `max_events` are required configuration for a zone. For example: 100 events every 1 minute. Because this module uses a sliding window algorithm, it works by looking back `<window>` duration and seeing if `<max_events>` events have already happened in that timeframe. If so, an internal HTTP 429 error is generated and returned, invoking error routes which you have defined (if any). Otherwise, the a reservation is made and the event is allowed through.
+A zone is synomymous with a rate limit, being a number of events per duration. Both `window`, `max_events` and `restriction_duration` are required configuration for a zone. For example: 100 events every 1 minute. This means that if a client makes 100 requests in 1 minute, they will be blocked for the next 10 minutes (the restriction duration).
 
 Each zone may optionally filter the requests it applies to by specifying [request matchers](https://caddyserver.com/docs/modules/http#servers/routes/match).
 
@@ -76,7 +77,8 @@ This is an HTTP handler module, so it can be used wherever `http.handlers` modul
 			"match": [],
 			"key": "",
 			"window": "",
-			"max_events": 0
+			"max_events": 0,
+			"restriction_duration": ""
 		},
 		"distributed": {
 			"write_interval": "",
@@ -90,7 +92,7 @@ This is an HTTP handler module, so it can be used wherever `http.handlers` modul
 ```
 
 
-All fields are optional, but to be useful, you'll need to define at least one zone, and a zone requires `window` and `max_events` to be set. Keys can be static (no placeholders) or dynamic (with placeholders). Matchers can be used to filter requests that apply to a zone. Replace `<name>` with your RL zone's name.
+All fields are optional, but to be useful, you'll need to define at least one zone, and a zone requires `window`, `max_events` and `restriction_duration` to be set. Keys can be static (no placeholders) or dynamic (with placeholders). Matchers can be used to filter requests that apply to a zone. Replace `<name>` with your RL zone's name.
 
 To enable distributed RL, set `distributed` to a non-null object. The default read and write intervals are 5s, but you should tune these for your individual deployments.
 
@@ -119,6 +121,7 @@ rate_limit {
 		key    <string>
 		window <duration>
 		events <max_events>
+		restriction_duration <duration>
 	}
 	distributed {
 		read_interval  <duration>
@@ -166,12 +169,14 @@ We also enable distributed rate limiting. By deploying this config to two or mor
 											],
 											"key": "static",
 											"window": "1m",
-											"max_events": 100
+											"max_events": 100,
+											"restriction_duration": "10m"
 										},
 										"dynamic_example": {
 											"key": "{http.request.remote.host}",
 											"window": "5s",
-											"max_events": 2
+											"max_events": 2,
+											"restriction_duration": "10s"
 										}
 									},
 									"distributed": {}
@@ -207,11 +212,13 @@ rate_limit {
 		key    static
 		events 100
 		window 1m
+		restriction_duration 10m
 	}
 	zone dynamic_example {
 		key    {remote_host}
 		events 2
 		window 5s
+		restriction_duration 10s
 	}
 }
 

@@ -35,7 +35,7 @@ type ringBufferRateLimiter struct {
 // in a sliding window of size window. If maxEvents is 0, no events are
 // allowed. If window is 0, all events are allowed. It panics if maxEvents or
 // window are less than zero. This method is idempotent.
-func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration) {
+func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration, restrictionDuration time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.window != 0 || r.ring != nil {
@@ -48,6 +48,11 @@ func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration) 
 		panic("window cannot be less than zero")
 	}
 	r.window = window
+	if restrictionDuration < 0 {
+		panic("restrictionDuration cannot be less than zero")
+	}
+	r.restrictionDuration = restrictionDuration
+
 	r.ring = make([]time.Time, maxEvents) // TODO: we can probably pool these
 }
 
