@@ -42,6 +42,7 @@ func parseCaddyfile(helper httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, e
 //	        key    <string>
 //	        window <duration>
 //	        events <max_events>
+//			restriction_duration <duration>
 //	    }
 //	    distributed {
 //	        read_interval  <duration>
@@ -102,10 +103,23 @@ func (h *Handler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 							return d.Errf("invalid max events integer '%s': %v", d.Val(), err)
 						}
 						zone.MaxEvents = maxEvents
+
+					case "restriction_duration":
+						if !d.NextArg() {
+							return d.ArgErr()
+						}
+						if zone.RestrictionDuration != 0 {
+							return d.Errf("zone restriction duration already specified: %v", zone.RestrictionDuration)
+						}
+						restrictionDuration, err := caddy.ParseDuration(d.Val())
+						if err != nil {
+							return d.Errf("invalid restriction duration '%s': %v", d.Val(), err)
+						}
+						zone.RestrictionDuration = caddy.Duration(restrictionDuration)
 					}
 				}
-				if zone.Window == 0 || zone.MaxEvents == 0 {
-					return d.Err("a rate limit zone requires both a window and maximum events")
+				if zone.Window == 0 || zone.MaxEvents == 0 || zone.RestrictionDuration == 0 {
+					return d.Err("a rate limit zone requires both a window, max events, and restriction duration")
 				}
 
 				if h.RateLimits == nil {
