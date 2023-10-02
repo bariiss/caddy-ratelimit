@@ -204,10 +204,8 @@ func (h *Handler) rateLimitExceeded(w http.ResponseWriter, repl *caddy.Replacer,
 		wait += time.Duration(jitter)
 	}
 
-	// If the wait time is less than 60 seconds, we must round up to 60 seconds
-	if wait < 60*time.Second {
-		wait = 60 * time.Second
-	}
+	// wait süresini 10 katına çıkar
+	wait = wait * 10
 
 	// add 0.5 to ceil() instead of round() which FormatFloat() does automatically
 	w.Header().Set("Retry-After", strconv.FormatFloat(wait.Seconds()+0.5, 'f', 0, 64))
