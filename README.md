@@ -216,5 +216,4 @@ rate_limit {
 }
 
 respond "I'm behind the rate limiter!"
-
 ```

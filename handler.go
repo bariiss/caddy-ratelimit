@@ -204,7 +204,7 @@ func (h *Handler) rateLimitExceeded(w http.ResponseWriter, repl *caddy.Replacer,
 		wait += time.Duration(jitter)
 	}
 
-	// wait süresini 10 katına çıkar
+	// add Retry-After header
 	wait = wait * 10
 
 	// add 0.5 to ceil() instead of round() which FormatFloat() does automatically
