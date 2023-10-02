@@ -220,7 +220,10 @@ func (h *Handler) rateLimitExceeded(w http.ResponseWriter, repl *caddy.Replacer,
 func (h *Handler) Cleanup() error {
 	// remove unused rate limit zones
 	for name := range h.RateLimits {
-		rateLimits.Delete(name)
+		_, err := rateLimits.Delete(name)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
