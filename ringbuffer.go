@@ -24,18 +24,17 @@ import (
 // sliding window of a given duration. An empty value is
 // not valid; always call initialize() before using.
 type ringBufferRateLimiter struct {
-	mu                  sync.Mutex
-	window              time.Duration
-	ring                []time.Time // len(ring) == maxEvents
-	cursor              int         // always points to the oldest timestamp
-	restrictionDuration time.Duration
+	mu     sync.Mutex
+	window time.Duration
+	ring   []time.Time // len(ring) == maxEvents
+	cursor int         // always points to the oldest timestamp
 }
 
 // initialize sets up the rate limiter if it isn't already, allowing maxEvents
 // in a sliding window of size window. If maxEvents is 0, no events are
 // allowed. If window is 0, all events are allowed. It panics if maxEvents or
 // window are less than zero. This method is idempotent.
-func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration, restrictionDuration time.Duration) {
+func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.window != 0 || r.ring != nil {
@@ -48,11 +47,6 @@ func (r *ringBufferRateLimiter) initialize(maxEvents int, window time.Duration, 
 		panic("window cannot be less than zero")
 	}
 	r.window = window
-	if restrictionDuration < 0 {
-		panic("restrictionDuration cannot be less than zero")
-	}
-	r.restrictionDuration = restrictionDuration
-
 	r.ring = make([]time.Time, maxEvents) // TODO: we can probably pool these
 }
 
@@ -174,26 +168,6 @@ func (r *ringBufferRateLimiter) SetWindow(window time.Duration) {
 	}
 	r.mu.Lock()
 	r.window = window
-	r.mu.Unlock()
-}
-
-// RestrictionDuration returns the duration of the restriction
-// that is imposed when the rate limit is exceeded.
-func (r *ringBufferRateLimiter) RestrictionDuration() time.Duration {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.restrictionDuration
-}
-
-// SetRestrictionDuration changes the duration of the restriction
-// that is imposed when the rate limit is exceeded. It panics if
-// duration is less than zero.
-func (r *ringBufferRateLimiter) SetRestrictionDuration(duration time.Duration) {
-	if duration < 0 {
-		panic("duration cannot be less than zero")
-	}
-	r.mu.Lock()
-	r.restrictionDuration = duration
 	r.mu.Unlock()
 }
 

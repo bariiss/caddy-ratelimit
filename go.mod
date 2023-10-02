@@ -1,4 +1,4 @@
-module github.com/bariiss/caddy-ratelimit
+module github.com/mholt/caddy-ratelimit
 
 go 1.18
 

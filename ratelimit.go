@@ -47,9 +47,6 @@ type RateLimit struct {
 	zoneName string
 
 	limiters *sync.Map
-
-	// RestrictionDuration is the amount of time to restrict
-	RestrictionDuration caddy.Duration `json:"xd,omitempty"`
 }
 
 func (rl *RateLimit) provision(ctx caddy.Context, name string) error {
@@ -58,9 +55,6 @@ func (rl *RateLimit) provision(ctx caddy.Context, name string) error {
 	}
 	if rl.MaxEvents < 0 {
 		return fmt.Errorf("max_events must be at least zero")
-	}
-	if rl.RestrictionDuration < 0 {
-		return fmt.Errorf("restriction_duration must be at least zero")
 	}
 
 	if len(rl.MatcherSetsRaw) > 0 {
@@ -85,7 +79,6 @@ func (rl *RateLimit) provision(ctx caddy.Context, name string) error {
 		limiter := value.(*ringBufferRateLimiter)
 		limiter.SetMaxEvents(rl.MaxEvents)
 		limiter.SetWindow(time.Duration(rl.Window))
-		limiter.SetRestrictionDuration(time.Duration(rl.RestrictionDuration))
 		return true
 	})
 
