@@ -2,7 +2,7 @@
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// You may obtain a copy of tzhe License at
 
 // 	http://www.apache.org/licenses/LICENSE-2.0
 
@@ -178,7 +178,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhtt
 		} else {
 			// as another side-effect of sync.Map's bad API, avoid all the
 			// work of initializing the ring buffer unless we have to
-			limiter.initialize(rl.MaxEvents, time.Duration(rl.Window))
+			limiter.initialize(rl.MaxEvents, time.Duration(rl.Window), time.Duration(rl.RestrictionDuration))
 		}
 
 		if h.Distributed == nil {
